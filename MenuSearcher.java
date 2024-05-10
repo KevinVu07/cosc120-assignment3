@@ -27,11 +27,16 @@ public class MenuSearcher {
 
     private static TypeOfBeverage type;
 
+    //a map containing the criteria:value pairs based on user input
+    private static Map<Criteria,Object> criteria = new HashMap<>();
+
     //JFrame main window fields
     private static JFrame mainWindow=null; //main container
     private static JPanel searchView = null; //view 1
     //results view field/s
     private static JComboBox<String> optionsCombo = null;
+
+
 
     //EDIT 37 - the main method creates the main JFrame. It initialises it with the search view, sets
     //its minimum size and ensures that it exits on close.
@@ -106,8 +111,6 @@ public class MenuSearcher {
      * @param searchCriteria an instance of the SearchCriteria class (used to generate JPanels for user to enter/select filters)
      */
     public static void conductSearch(SearchView searchCriteria) throws IOException {
-        //a map containing the criteria:value pairs based on user input
-        Map<Criteria,Object> criteria = new HashMap<>();
         type = searchCriteria.getTypeOfBeverage();
         if(type==TypeOfBeverage.SELECT_TYPE) {
             JOptionPane.showMessageDialog(mainWindow,"You MUST select a type of beverage.\n","Invalid search",JOptionPane.INFORMATION_MESSAGE,null);
@@ -132,10 +135,11 @@ public class MenuSearcher {
         }
 
         if(type.equals(TypeOfBeverage.TEA)){
-            String temperature = searchCriteria.getTemperature();
-            if (!temperature.equals("I don't mind")) criteria.put(Criteria.TEMPERATURE, temperature);
-            String steepingTime = searchCriteria.getSteepingTime();
-            if (!temperature.equals("I don't mind")) criteria.put(Criteria.STEEPING_TIME, steepingTime);
+            int temperature = searchCriteria.getTemperature();
+            if (temperature > 0) criteria.put(Criteria.TEMPERATURE, temperature);
+            int steepingTime = searchCriteria.getSteepingTime();
+            System.out.println("steeping time of dream beverage is "+ steepingTime);
+            if (steepingTime > 0) criteria.put(Criteria.STEEPING_TIME, steepingTime);
         }
 
         //create a DreamBeverage object, and use it to search the real beverage database
@@ -192,8 +196,7 @@ public class MenuSearcher {
 
         //loop through the matches, generating a description of each
         for (Beverage beverage: potentialMatches) {
-
-            JTextArea beverageDescription = new JTextArea("\n"+beverage.getDescription());
+            JTextArea beverageDescription = new JTextArea("\n"+beverage.displayMenu());
             beverageDescription.setEditable(false); //ensure the description can't be edited!
             //this will ensure that if the description is long, it 'overflows'
             beverageDescription.setLineWrap(true);
@@ -218,6 +221,7 @@ public class MenuSearcher {
         SwingUtilities.invokeLater(() -> verticalScrollBar.getViewport().setViewPosition( new Point(0, 0) ));
         return verticalScrollBar;
     }
+
 
     //EDIT 36: – this method generates a dropdown list of matching beverages, and a button that allows the user
     //to search again if they don’t like their results. It contains 2 action listeners – the first regenerates
@@ -339,7 +343,7 @@ public class MenuSearcher {
      * @param chosenBeverage the Coffee object that has the details of the chosen coffee that the geek wants
      */
     private static void writeOrderToFile(Geek geek, Beverage chosenBeverage, SearchView dreamBeverage) {
-        String filePath = ".assignment3/order_" + geek.phoneNumber() + ".txt";
+        String filePath = "./assignment3/order_" + geek.phoneNumber() + ".txt";
         Path path = Path.of(filePath);
         /* Order details:
         Name: Dr. Walter Shepman
@@ -347,11 +351,12 @@ public class MenuSearcher {
         Item: Mocha (30213)
         Milk: Full-cream */
 
-        String milkChoice = "";
-        if (dreamBeverage.getMilk() == null) {
+        String milkChoice = criteria.get(Criteria.MILK).toString();
+        System.out.println(milkChoice);
+        if (milkChoice == null) {
             milkChoice = "Whichever is ok.";
         } else {
-            milkChoice = dreamBeverage.getMilk().toString();
+            milkChoice = criteria.get(Criteria.MILK).toString();
         }
         String lineToWrite = "Order details:\n" +
                 "Name: " + geek.name() + "\n" +
@@ -487,18 +492,6 @@ public class MenuSearcher {
             menu.addItem(beverage);
         }
         return menu;
-    }
-
-    /**
-     * use to parse/read collection type data from the file
-     * @param rawData a String straight from the file in the format item1, item2 etc. containing unwanted characters
-     * @return a Set of Strings, each representing one 'cleaned up' item in a collection
-     */
-    private static Set<String> loadCollectionData(String rawData){
-        String[] splitData = rawData.replace("]","").replace("\r","").split(",");
-        Set<String> processedData = new HashSet<>();
-        for(String item: splitData) processedData.add(item.toLowerCase().strip());
-        return processedData;
     }
 
     /**

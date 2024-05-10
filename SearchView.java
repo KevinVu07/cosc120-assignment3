@@ -56,8 +56,8 @@ public class SearchView {
     //create fields to store the user’s choices
     private Set<String> chosenExtras;
     private int numberOfShots;
-    private String steepingTime;
-    private String temperature;
+    private int steepingTime;
+    private int temperature;
 
     //finally, create a constructor that will be used to instantiate this class, initializing the available milk,
     //extras data structures to the values derived from the menu.txt file.
@@ -518,11 +518,21 @@ public class SearchView {
         //let's assume the user prefers 80 degrees
         temperatureJComboBox.setSelectedItem("80 degrees: For a mellow, gentler taste");
         //initialise the field
-        temperature = (String) temperatureJComboBox.getSelectedItem();
+        String response = (String) temperatureJComboBox.getSelectedItem();
+        if (response.equals("I don't mind")) {
+            temperature = -1;
+        } else {
+            temperature = convertTemperatureToInt(response);
+        }
         //update the field if user changes selection
         temperatureJComboBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                temperature = (String) temperatureJComboBox.getSelectedItem();
+                String newResponse = (String) temperatureJComboBox.getSelectedItem();
+                if (newResponse.equals("I don't mind")) {
+                    temperature = -1;
+                } else {
+                    temperature = convertTemperatureToInt(newResponse);
+                }
             }
         });
         //create and return JPanel containing instruction, and dropdown list and padding
@@ -538,19 +548,41 @@ public class SearchView {
         return temperaturePanel;
     }
 
+    public int convertTemperatureToInt(String response) {
+        int temperature = -1;
+        switch (response) {
+            case "80 degrees: For a mellow, gentler taste" -> temperature = 80;
+            case "85 degrees: For slightly sharper than mellow" -> temperature = 85;
+            case "90 degrees: Balanced, strong but not too strong" -> temperature = 90;
+            case "95 degrees: Strong, but not acidic" -> temperature = 95;
+            case "100 degrees: For a bold, strong flavour" -> temperature = 100;
+        }
+        return temperature;
+    }
+
     public JPanel userInputSteepingTime(){
         //a dropdown list of all steeping time options
         String[] steepingTimeOptions = {"1", "2", "3", "4", "5", "6", "7", "8", "I don't mind"};
         JComboBox<String> steepingTimeJComboBox = new JComboBox<>(steepingTimeOptions);
         steepingTimeJComboBox.setAlignmentX(0);
-        //let's assume the user prefers 2 minutes
-        steepingTimeJComboBox.setSelectedItem("2");
+        //let's assume the user prefers 1 minutes
+        steepingTimeJComboBox.setSelectedItem("1");
         //initialise the field
-        steepingTime = (String) steepingTimeJComboBox.getSelectedItem();
+        String response = (String) steepingTimeJComboBox.getSelectedItem();
+        if (response.equals("I don't mind")) {
+            steepingTime = -1;
+        } else {
+            steepingTime = Integer.parseInt(response);
+        }
         //update the field if user changes selection
         steepingTimeJComboBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                steepingTime = (String) steepingTimeJComboBox.getSelectedItem();
+                String newResponse = (String) steepingTimeJComboBox.getSelectedItem();
+                if (newResponse.equals("I don't mind")) {
+                    steepingTime = -1;
+                } else {
+                    steepingTime = Integer.parseInt(newResponse);
+                }
             }
         });
         //create and return JPanel containing instruction, and dropdown list and padding
@@ -644,22 +676,6 @@ public class SearchView {
         return imagePanel;
     }
 
-//    //the above methods (SearchView userInputGames, userInputTVShows and userInputHobbies ) are brought
-//    //together in a JPanel (this will be one of the cards used in CardLayout)
-//    /**
-//     * @return a JPanel containing the three filters used to search for the 'friend' type
-//     */
-//    public JPanel userInputFriendCriteria(){
-//        JPanel games = userInputGames();
-//        JPanel tvShows = userInputTVShows();
-//        JPanel hobbies = userInputHobbies();
-//        JPanel overall = new JPanel();
-//        overall.setLayout(new BoxLayout(overall,BoxLayout.PAGE_AXIS));
-//        overall.add(games);
-//        overall.add(tvShows);
-//        overall.add(hobbies);
-//        return overall;
-//    }
 
 
     /*--------------------getters------------------*/
@@ -690,11 +706,11 @@ public class SearchView {
         return numberOfShots;
     }
 
-    public String getSteepingTime() {
+    public int getSteepingTime() {
         return steepingTime;
     }
 
-    public String getTemperature() {
+    public int getTemperature() {
         return temperature;
     }
 
