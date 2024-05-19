@@ -81,8 +81,14 @@ public class DreamBeverage {
         for(Criteria key : realBeverage.getAllCriteria().keySet()) {
             // compare each criteria (key - values) that both the realBeverage and the dreamBeverage have to each other)
             if(this.getAllCriteria().containsKey(key)){
+                // to check extra is null (none) option
+                if (getCriteria(key) == null && realBeverage.getCriteria(key) instanceof Collection<?>) {
+                    Set<Object> extraOptions = new HashSet<>((Collection<?>) realBeverage.getCriteria(key));
+                    // if the real drink has an extra option then it is unmatched, because the user dream beverage has NO extra (e.g. long black)
+                    if (!extraOptions.isEmpty()) return false;
+                }
                 // if the criteria to compare in both realBeverage and dreamBeverage are a collection (set), check for intersect of the 2 collection
-                if(getCriteria(key) instanceof Collection<?> && realBeverage.getCriteria(key) instanceof Collection<?>){
+                else if(getCriteria(key) instanceof Collection<?> && realBeverage.getCriteria(key) instanceof Collection<?>){
                     Set<Object> intersect = new HashSet<>((Collection<?>) realBeverage.getCriteria(key));
                     intersect.retainAll((Collection<?>) getCriteria(key));
                     if(intersect.isEmpty()) return false;

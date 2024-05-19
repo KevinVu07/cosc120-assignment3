@@ -123,7 +123,11 @@ public class MenuSearcher {
         Sugar sugar = searchCriteria.getSugar();
         if(!sugar.equals(Sugar.I_DONT_MIND))criteria.put(Criteria.SUGAR,sugar);
         Set<String> chosenExtras = searchCriteria.getChosenExtras();
-        if(!chosenExtras.isEmpty() && !chosenExtras.contains("I don't mind")) criteria.put(Criteria.EXTRAS,searchCriteria.getChosenExtras());
+        if(!chosenExtras.isEmpty() && chosenExtras != null) {
+            criteria.put(Criteria.EXTRAS,searchCriteria.getChosenExtras());
+        } else if (chosenExtras == null) {
+            criteria.put(Criteria.EXTRAS, null);
+        }
         //get the user's price range selection
         int minPrice = searchCriteria.getMinPrice();
         int maxPrice = searchCriteria.getMaxPrice();

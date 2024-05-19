@@ -5,6 +5,7 @@
  */
 
 import javax.imageio.ImageIO;
+import javax.lang.model.element.TypeElement;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -30,6 +31,7 @@ public class SearchView {
     //create final String labels (constants) to associate with each JPanel that will act as a card
     private final String COFFEE_PANEL = "Coffee";
     private final String TEA_PANEL = "Tea";
+    private final String EXTRA_CHOICE_PANEL = "Extra choice preference";
     private final String IMAGE_PANEL = "beverage images";
     //create a JPanel (container) field. Its layout will be set to CardLayout later,
     //so that it can act as a container of cards.
@@ -52,6 +54,10 @@ public class SearchView {
     //these are all the available milk options, extras options, obtained from the file
     private final Set<Milk> availableMilk;
     private final Set<String> availableExtras;
+    private JList<String> moreThanOneExtraList;
+    private JLabel moreThanOneExtraInstruction;
+    private JComboBox<Extra> extraChoiceSelection;
+    private Extra extraChoice;
 
     //create fields to store the user’s choices
     private Set<String> chosenExtras;
@@ -89,9 +95,9 @@ public class SearchView {
         criteria.setLayout(new BoxLayout(criteria,BoxLayout.Y_AXIS));
         //add the type of beverage, and generic filters to the panel, along with some padding
 
-        JPanel type = this.userInputTypeOfBeverage();
-        type.setAlignmentX(0);
-        criteria.add(type);
+        JPanel typeOfBeveragePanel = this.userInputTypeOfBeverage();
+        typeOfBeveragePanel.setAlignmentX(0);
+        criteria.add(typeOfBeveragePanel);
         JPanel generic = this.userInputGenericCriteria();
         generic.setAlignmentX(0);
         criteria.add(generic);
@@ -105,6 +111,7 @@ public class SearchView {
         typeOfDreamBeverageSpecificCriteriaPanel.setAlignmentX(0);
         typeOfDreamBeverageSpecificCriteriaPanel.setLayout(cardLayout);
         typeOfDreamBeverageSpecificCriteriaPanel.add(this.generateImagePanel(),IMAGE_PANEL);
+        typeOfDreamBeverageSpecificCriteriaPanel.add(this.userInputExtraChoice(), EXTRA_CHOICE_PANEL);
         typeOfDreamBeverageSpecificCriteriaPanel.add(this.userInputCoffee(),COFFEE_PANEL);
         typeOfDreamBeverageSpecificCriteriaPanel.add(this.userInputTea(),TEA_PANEL);
         //add the beverage-specific panel to the main search panel and return it
@@ -153,9 +160,12 @@ public class SearchView {
         //use the CardLayout object to show the appropriate JPanel 'card' based on the user's dropdown list choice
         //you can then switch between the cards based on the user’s selection, using the show method.
         if (typeOfBeverage.equals(TypeOfBeverage.SELECT_TYPE)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,IMAGE_PANEL);
-        else if (typeOfBeverage.equals(TypeOfBeverage.TEA)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,TEA_PANEL);
+        else cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,EXTRA_CHOICE_PANEL);
+        if (typeOfBeverage.equals(TypeOfBeverage.TEA)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,TEA_PANEL);
         else if(typeOfBeverage.equals(TypeOfBeverage.COFFEE)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,COFFEE_PANEL);
     }
+
+
 
     //this method creates a ButtonGroup, adding 3 radio buttons to it, representing yes,
     //no, or I don't mind.  These buttons are added to a JPanel, which is returned.
@@ -262,8 +272,33 @@ public class SearchView {
                 }
             }
         }
-        extraOptions.add("I don't mind");
         return extraOptions;
+    }
+
+    public JPanel userInputExtraChoice() {
+        // Let user have options to select NONE, ONE, MORE THAN ONE and SKIP for extras.
+        extraChoiceSelection = new JComboBox<>(Extra.values());
+        extraChoiceSelection.setAlignmentX(0);
+        extraChoiceSelection.setPreferredSize(new Dimension(150,30)); //sizes the dropdown list
+        extraChoiceSelection.requestFocusInWindow();
+        //this prevents the dropdown list from automatically selecting extra preference for user
+        extraChoiceSelection.setSelectedItem(Extra.SELECT_EXTRA_PREFERENCE);
+        extraChoice = Extra.SELECT_EXTRA_PREFERENCE; // initialize the user's extra choice selection to the dummy value
+        extraChoiceSelection.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) onExtraChoiceSelected();
+        });
+
+        //create and return JPanel containing instruction, and dropdown list and padding
+        JPanel extraChoicePanel = new JPanel();
+        extraChoicePanel.setLayout(new BoxLayout(extraChoicePanel,BoxLayout.Y_AXIS));
+        extraChoicePanel.setAlignmentX(0);
+        extraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
+        JLabel instruction = new JLabel("Would you like to have extra/s with your drink (More than one, None, or Skip / I don't mind)?");
+        instruction.setAlignmentX(0);
+        extraChoicePanel.add(instruction);
+        extraChoicePanel.add(extraChoiceSelection);
+        extraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
+        return extraChoicePanel;
     }
 
     //this method creates a JList of all the extras options, allowing the user to select one or more values.
@@ -274,39 +309,84 @@ public class SearchView {
      */
     public JPanel userInputExtras(TypeOfBeverage typeOfBeverage){
         String type = typeOfBeverage.toString();
-        //Create a JList of all the extras
-        JList<String> selectExtras = new JList<>(loadExtraOptions(type).toArray(new String[0]));
-        //ensure you enable multi-selection
-        selectExtras.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        //create a scroll pane to limit the visible size of the JList and enable scrolling
-        JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setViewportView(selectExtras);
-        selectExtras.setLayoutOrientation(JList.VERTICAL); //vertical scrollbar
-        //set the size of the scroll pane
-        scrollPane.setPreferredSize(new Dimension(250, 60));
-        //always show the scrollbar
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        //set the position of the scroll bar  to the top of the scrollable area
-        SwingUtilities.invokeLater(() -> scrollPane.getViewport().setViewPosition( new Point(0, 0) ));
+        JPanel moreThanOneExtraChoicePanel = new JPanel();
 
-        //update the extra field if the user selects a new item
-        ListSelectionListener listSelectionListener = e-> chosenExtras = new HashSet<>(selectExtras.getSelectedValuesList());
-        selectExtras.addListSelectionListener(listSelectionListener);
-        //add the dropdown list, and an instructional JLabel to a panel and return it
-        JPanel extrasPanel = new JPanel();
-        extrasPanel.setLayout(new BoxLayout(extrasPanel,BoxLayout.Y_AXIS));
-        extrasPanel.add(Box.createRigidArea(new Dimension(0,5)));
-        JLabel instruction = new JLabel("Which extra/s would you like for your drink?");
-        instruction.setAlignmentX(0);
-        extrasPanel.add(instruction);
-        JLabel clarification = new JLabel("(To multi-select, hold Ctrl)");
-        clarification.setAlignmentX(0);
-        clarification.setFont(new Font("", Font. ITALIC, 12));
-        extrasPanel.add(clarification);
-        scrollPane.setAlignmentX(0);
-        extrasPanel.add(scrollPane); //add the scrollable area to your JPanel as usual
-        extrasPanel.add(Box.createRigidArea(new Dimension(0,5)));
-        return extrasPanel;
+        if (type.equalsIgnoreCase("coffee") || type.equalsIgnoreCase("tea")) {
+            // get the extra option set for the type of beverage
+            Set<String> extraOptionSet = loadExtraOptions(type);
+            // convert extra set to extra array
+            String[] extraOptionArray = extraOptionSet.stream().toArray(String[] ::new);
+
+            //Create a JList of all the extras
+            moreThanOneExtraList = new JList<>(extraOptionArray);
+            //enable multi-selection
+            moreThanOneExtraList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            //create a scroll pane to limit the visible size of the JList and enable scrolling
+            JScrollPane scrollPane = new JScrollPane();
+            scrollPane.setViewportView(moreThanOneExtraList);
+            moreThanOneExtraList.setLayoutOrientation(JList.VERTICAL); //vertical scrollbar
+            //set the size of the scroll pane
+            scrollPane.setPreferredSize(new Dimension(250, 60));
+            //always show the scrollbar
+            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            //set the position of the scroll bar  to the top of the scrollable area
+            SwingUtilities.invokeLater(() -> scrollPane.getViewport().setViewPosition( new Point(0, 0) ));
+
+            //update the extra field if the user selects a new item
+            ListSelectionListener listSelectionListener = l-> chosenExtras = new HashSet<>(moreThanOneExtraList.getSelectedValuesList());
+            moreThanOneExtraList.addListSelectionListener(listSelectionListener);
+
+
+
+            //add the dropdown list, and an instructional JLabel to a panel and return it
+            moreThanOneExtraChoicePanel.setLayout(new BoxLayout(moreThanOneExtraChoicePanel,BoxLayout.Y_AXIS));
+            moreThanOneExtraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
+            JLabel extraChoiceInstruction = new JLabel("Would you like to have extra/s with your drink (More than one, None, or Skip / I don't mind)?");
+            extraChoiceInstruction.setAlignmentX(0);
+            moreThanOneExtraChoicePanel.add(extraChoiceInstruction);
+            moreThanOneExtraChoicePanel.add(extraChoiceSelection);
+            moreThanOneExtraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
+            moreThanOneExtraInstruction = new JLabel("Which extra/s would you like for your drink?");
+            moreThanOneExtraInstruction.setAlignmentX(0);
+            moreThanOneExtraChoicePanel.add(moreThanOneExtraInstruction);
+            JLabel clarification = new JLabel("(To multi-select, hold Ctrl)");
+            clarification.setAlignmentX(0);
+            clarification.setFont(new Font("", Font. ITALIC, 12));
+            moreThanOneExtraChoicePanel.add(clarification);
+            scrollPane.setAlignmentX(0);
+            moreThanOneExtraChoicePanel.add(scrollPane); //add the scrollable area to your JPanel as usual
+            moreThanOneExtraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
+
+            // disable more than one extra lists as long as the user not choosing one or more extra option
+            if (!extraChoice.equals(Extra.ONE_OR_MORE)) {
+                moreThanOneExtraInstruction.setVisible(false);
+                moreThanOneExtraList.setVisible(false);
+            }
+        }
+        return moreThanOneExtraChoicePanel;
+    }
+
+    /**
+     * This method handles the situation where the user selects an option for extra (None, One or more, Skip).
+     * It populates the extras list for one or more or hides the list for none and skip.
+     */
+    private void onExtraChoiceSelected() {
+        // set the field selected extra choice to the user's choice
+        extraChoice = (Extra) extraChoiceSelection.getSelectedItem();
+        System.out.println("Selected Extra: " + extraChoice); // Debug statement
+        assert extraChoice != null; // we know it isn't null
+        if (extraChoice.equals(Extra.ONE_OR_MORE)) {
+            moreThanOneExtraInstruction.setVisible(true);
+            moreThanOneExtraList.setVisible(true);
+        } else {
+            moreThanOneExtraInstruction.setVisible(false);
+            moreThanOneExtraList.setVisible(false);
+            if (extraChoice.equals(Extra.SKIP)) {
+                chosenExtras.clear(); // clear selected extras if NONE is selected
+            } else if (extraChoice.equals(Extra.NONE)) {
+                chosenExtras = null;
+            }
+        }
     }
 
     //this method will allow the user to enter a min price >= 0, and a max price >= to the min price.
@@ -371,17 +451,17 @@ public class SearchView {
         });
 
         //add the text fields and labels to a panel
-        JPanel ageRangePanel = new JPanel(); //flowlayout by default
-        ageRangePanel.add(minLabel);
-        ageRangePanel.add(min);
-        ageRangePanel.add(maxLabel);
-        ageRangePanel.add(max);
+        JPanel priceRangePanel = new JPanel(); //flowlayout by default
+        priceRangePanel.add(minLabel);
+        priceRangePanel.add(min);
+        priceRangePanel.add(maxLabel);
+        priceRangePanel.add(max);
 
         JPanel finalPanel = new JPanel();
         finalPanel.setBorder(BorderFactory.createTitledBorder("Enter desired price range"));
         finalPanel.setLayout(new BoxLayout(finalPanel,BoxLayout.Y_AXIS)); //stack elements vertically
         finalPanel.setAlignmentX(0);
-        finalPanel.add(ageRangePanel);
+        finalPanel.add(priceRangePanel);
         feedbackMin.setAlignmentX(0);
         feedbackMax.setAlignmentX(0);
         finalPanel.add(feedbackMin); //feedback below age entry text boxes
@@ -499,10 +579,10 @@ public class SearchView {
         numberOfShots.setAlignmentX(0);
         jPanel.add(numberOfShots);
         jPanel.add(Box.createRigidArea(new Dimension(0,30)));
-        JPanel extras = userInputCoffeeExtras();
-        extras.setAlignmentX(0);
-        jPanel.add(extras);
-        jPanel.add(Box.createRigidArea(new Dimension(0,30)));
+//        JPanel extras = userInputCoffeeExtras();
+//        extras.setAlignmentX(0);
+//        jPanel.add(extras);
+//        jPanel.add(Box.createRigidArea(new Dimension(0,30)));
         return jPanel;
     }
 
@@ -648,6 +728,8 @@ public class SearchView {
         genericCriteria.add(this.getUserInputPriceRange());
         genericCriteria.add(this.userInputSugar());
         genericCriteria.add(this.userInputMilk());
+//        genericCriteria.add(this.userInputExtraChoice());
+//        genericCriteria.add(this.userInputExtras(typeOfBeverage));
         return genericCriteria;
     }
 
