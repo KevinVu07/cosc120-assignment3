@@ -397,7 +397,9 @@ public class SearchView {
 //            moreThanOneExtraInstruction.setVisible(true);
 //            moreThanOneExtraList.setVisible(true);
         } else {
-            relevantExtra.setEnabled(false);
+            if (relevantExtra != null) {
+                relevantExtra.setEnabled(false);
+            }
             extraSelectionPanel.revalidate();
             extraSelectionPanel.repaint();
 //            moreThanOneExtraInstruction.setVisible(false);
