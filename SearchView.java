@@ -36,6 +36,9 @@ public class SearchView {
     //create a JPanel (container) field. Its layout will be set to CardLayout later,
     //so that it can act as a container of cards.
     private JPanel typeOfDreamBeverageSpecificCriteriaPanel;
+    private JPanel extraSelectionPanel;
+    private JPanel relevantExtra;
+
 
     //add fields to store user choices for sugar, milk
     private Sugar sugar;
@@ -109,13 +112,20 @@ public class SearchView {
         //set the layout to cardLayout, then add all the beverage-specific panels to it (we'll switch between the panels as we need them)
         //the string constants are necessary to keep track of the cards
         typeOfDreamBeverageSpecificCriteriaPanel.setAlignmentX(0);
+        typeOfDreamBeverageSpecificCriteriaPanel.setAlignmentY(0);
         typeOfDreamBeverageSpecificCriteriaPanel.setLayout(cardLayout);
         typeOfDreamBeverageSpecificCriteriaPanel.add(this.generateImagePanel(),IMAGE_PANEL);
-        typeOfDreamBeverageSpecificCriteriaPanel.add(this.userInputExtraChoice(), EXTRA_CHOICE_PANEL);
         typeOfDreamBeverageSpecificCriteriaPanel.add(this.userInputCoffee(),COFFEE_PANEL);
         typeOfDreamBeverageSpecificCriteriaPanel.add(this.userInputTea(),TEA_PANEL);
         //add the beverage-specific panel to the main search panel and return it
         criteria.add(typeOfDreamBeverageSpecificCriteriaPanel);
+
+        extraSelectionPanel = new JPanel();
+        extraSelectionPanel.setAlignmentX(0);
+        extraSelectionPanel.setAlignmentY(1);
+        extraSelectionPanel.add(this.userInputExtraChoice(), EXTRA_CHOICE_PANEL);
+        criteria.add(extraSelectionPanel);
+//        extraSelectionPanel.setVisible(false);
         return criteria;
     }
 
@@ -160,11 +170,14 @@ public class SearchView {
         //use the CardLayout object to show the appropriate JPanel 'card' based on the user's dropdown list choice
         //you can then switch between the cards based on the user’s selection, using the show method.
         if (typeOfBeverage.equals(TypeOfBeverage.SELECT_TYPE)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,IMAGE_PANEL);
-        else cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,EXTRA_CHOICE_PANEL);
-        if (typeOfBeverage.equals(TypeOfBeverage.TEA)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,TEA_PANEL);
-        else if(typeOfBeverage.equals(TypeOfBeverage.COFFEE)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,COFFEE_PANEL);
-    }
-
+        else {
+            extraChoiceSelection.setSelectedItem(Extra.SELECT_EXTRA_PREFERENCE);
+            extraSelectionPanel.setVisible(true);
+            if (typeOfBeverage.equals(TypeOfBeverage.TEA)) {
+                cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,TEA_PANEL);
+            } else if(typeOfBeverage.equals(TypeOfBeverage.COFFEE)) cardLayout.show(typeOfDreamBeverageSpecificCriteriaPanel,COFFEE_PANEL);
+        }
+        }
 
 
     //this method creates a ButtonGroup, adding 3 radio buttons to it, representing yes,
@@ -311,11 +324,12 @@ public class SearchView {
         String type = typeOfBeverage.toString();
         JPanel moreThanOneExtraChoicePanel = new JPanel();
 
-        if (type.equalsIgnoreCase("coffee") || type.equalsIgnoreCase("tea")) {
+        if (!type.equals(TypeOfBeverage.SELECT_TYPE)) {
             // get the extra option set for the type of beverage
             Set<String> extraOptionSet = loadExtraOptions(type);
             // convert extra set to extra array
             String[] extraOptionArray = extraOptionSet.stream().toArray(String[] ::new);
+            System.out.println("Extra options for " + typeOfBeverage + " is" + Arrays.toString(extraOptionArray));
 
             //Create a JList of all the extras
             moreThanOneExtraList = new JList<>(extraOptionArray);
@@ -341,11 +355,6 @@ public class SearchView {
             //add the dropdown list, and an instructional JLabel to a panel and return it
             moreThanOneExtraChoicePanel.setLayout(new BoxLayout(moreThanOneExtraChoicePanel,BoxLayout.Y_AXIS));
             moreThanOneExtraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
-            JLabel extraChoiceInstruction = new JLabel("Would you like to have extra/s with your drink (More than one, None, or Skip / I don't mind)?");
-            extraChoiceInstruction.setAlignmentX(0);
-            moreThanOneExtraChoicePanel.add(extraChoiceInstruction);
-            moreThanOneExtraChoicePanel.add(extraChoiceSelection);
-            moreThanOneExtraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
             moreThanOneExtraInstruction = new JLabel("Which extra/s would you like for your drink?");
             moreThanOneExtraInstruction.setAlignmentX(0);
             moreThanOneExtraChoicePanel.add(moreThanOneExtraInstruction);
@@ -357,11 +366,11 @@ public class SearchView {
             moreThanOneExtraChoicePanel.add(scrollPane); //add the scrollable area to your JPanel as usual
             moreThanOneExtraChoicePanel.add(Box.createRigidArea(new Dimension(0,5)));
 
-            // disable more than one extra lists as long as the user not choosing one or more extra option
-            if (!extraChoice.equals(Extra.ONE_OR_MORE)) {
-                moreThanOneExtraInstruction.setVisible(false);
-                moreThanOneExtraList.setVisible(false);
-            }
+//            // disable more than one extra lists as long as the user not choosing one or more extra option
+//            if (!extraChoice.equals(Extra.ONE_OR_MORE)) {
+//                moreThanOneExtraInstruction.setVisible(false);
+//                moreThanOneExtraList.setVisible(false);
+//            }
         }
         return moreThanOneExtraChoicePanel;
     }
@@ -375,18 +384,35 @@ public class SearchView {
         extraChoice = (Extra) extraChoiceSelection.getSelectedItem();
         System.out.println("Selected Extra: " + extraChoice); // Debug statement
         assert extraChoice != null; // we know it isn't null
-        if (extraChoice.equals(Extra.ONE_OR_MORE)) {
-            moreThanOneExtraInstruction.setVisible(true);
-            moreThanOneExtraList.setVisible(true);
+        if (relevantExtra != null) {
+            extraSelectionPanel.remove(relevantExtra);
+        }
+//        Set<String> relevantExtraOptions = null;
+        if (extraChoice.equals(Extra.ONE_OR_MORE) && !typeOfBeverage.equals(TypeOfBeverage.SELECT_TYPE)) {
+            relevantExtra = this.userInputExtras(typeOfBeverage);
+            chosenExtras = null;
+            extraSelectionPanel.add(relevantExtra);
+            extraSelectionPanel.revalidate();
+            extraSelectionPanel.repaint();
+//            moreThanOneExtraInstruction.setVisible(true);
+//            moreThanOneExtraList.setVisible(true);
         } else {
-            moreThanOneExtraInstruction.setVisible(false);
-            moreThanOneExtraList.setVisible(false);
-            if (extraChoice.equals(Extra.SKIP)) {
+            relevantExtra.setEnabled(false);
+            extraSelectionPanel.revalidate();
+            extraSelectionPanel.repaint();
+//            moreThanOneExtraInstruction.setVisible(false);
+//            moreThanOneExtraList.setVisible(false);
+            if (extraChoice.equals(Extra.SKIP) && chosenExtras != null) {
                 chosenExtras.clear(); // clear selected extras if NONE is selected
             } else if (extraChoice.equals(Extra.NONE)) {
                 chosenExtras = null;
             }
         }
+//        String[] relevantExtraOptionArray = relevantExtraOptions.stream().toArray(String[] ::new);
+//        //Create a JList of all the extras
+//        moreThanOneExtraList = new JList<>(relevantExtraOptionArray);
+////        enable multi-selection
+//        moreThanOneExtraList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
     //this method will allow the user to enter a min price >= 0, and a max price >= to the min price.
@@ -703,10 +729,10 @@ public class SearchView {
         steepingTime.setAlignmentX(0);
         jPanel.add(steepingTime);
         jPanel.add(Box.createRigidArea(new Dimension(0,30)));
-        JPanel extras = userInputTeaExtras();
-        extras.setAlignmentX(0);
-        jPanel.add(extras);
-        jPanel.add(Box.createRigidArea(new Dimension(0,30)));
+//        JPanel extras = userInputTeaExtras();
+//        extras.setAlignmentX(0);
+//        jPanel.add(extras);
+//        jPanel.add(Box.createRigidArea(new Dimension(0,30)));
         return jPanel;
     }
 
@@ -810,7 +836,9 @@ public class SearchView {
     public int getMaxPrice() {
         return maxPrice;
     }
+    }
 
 
-}
+
+
 
