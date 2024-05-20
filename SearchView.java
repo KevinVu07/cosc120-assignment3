@@ -122,8 +122,7 @@ public class SearchView {
 
         extraSelectionPanel = new JPanel();
         extraSelectionPanel.setAlignmentX(0);
-        extraSelectionPanel.setAlignmentY(1);
-        extraSelectionPanel.add(this.userInputExtraChoice(), EXTRA_CHOICE_PANEL);
+        extraSelectionPanel.add(this.userInputExtraChoice());
         criteria.add(extraSelectionPanel);
 //        extraSelectionPanel.setVisible(false);
         return criteria;
@@ -340,7 +339,7 @@ public class SearchView {
             scrollPane.setViewportView(moreThanOneExtraList);
             moreThanOneExtraList.setLayoutOrientation(JList.VERTICAL); //vertical scrollbar
             //set the size of the scroll pane
-            scrollPane.setPreferredSize(new Dimension(250, 60));
+            scrollPane.setPreferredSize(new Dimension(250, 150));
             //always show the scrollbar
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             //set the position of the scroll bar  to the top of the scrollable area
@@ -394,6 +393,7 @@ public class SearchView {
             extraSelectionPanel.add(relevantExtra);
             extraSelectionPanel.revalidate();
             extraSelectionPanel.repaint();
+            MenuSearcher.mainWindow.pack();
 //            moreThanOneExtraInstruction.setVisible(true);
 //            moreThanOneExtraList.setVisible(true);
         } else {

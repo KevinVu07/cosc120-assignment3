@@ -31,7 +31,7 @@ public class MenuSearcher {
     private static Map<Criteria,Object> criteria = new HashMap<>();
 
     //JFrame main window fields
-    private static JFrame mainWindow=null; //main container
+    public static JFrame mainWindow=null; //main container
     private static JPanel searchView = null; //view 1
     //results view field/s
     private static JComboBox<String> optionsCombo = null;
