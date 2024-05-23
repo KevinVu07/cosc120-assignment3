@@ -105,8 +105,6 @@ public class SearchView {
         generic.setAlignmentX(0);
         criteria.add(generic);
 
-        criteria.add(Box.createRigidArea(new Dimension(0,20)));
-
         //initialise the JPanel that is to contain the beverage-specific filters
         typeOfDreamBeverageSpecificCriteriaPanel = new JPanel();
         //set the layout to cardLayout, then add all the beverage-specific panels to it (we'll switch between the panels as we need them)

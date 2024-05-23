@@ -59,7 +59,8 @@ public class DreamBeverage {
      */
     public String getDescription(){
         StringBuilder description = new StringBuilder();
-        for(Criteria key: criteria.keySet()) {
+        Map<Criteria,Object> criteriaCopy = new LinkedHashMap<>(criteria);
+        for(Criteria key: criteriaCopy.keySet()) {
             String criteriaChoice = getCriteria(key).toString();
             if (key.equals(Criteria.MILK)) {
                 criteriaChoice = getCriteria(Criteria.MILK).toString().replace("[", "").replace("]", "");
